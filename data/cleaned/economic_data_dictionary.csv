@@ -1,0 +1,15 @@
+column_name,data_type,description
+country_name,character,Standardized country name
+country_code,character,ISO 3-letter country code
+indicator_name,character,Full indicator name from World Bank
+indicator_code,character,World Bank indicator code
+year,integer,Year of observation
+value,numeric,Indicator value in original units
+indicator_short,character,"Short indicator name (gdp, inflation, cpi, gdp_deflator)"
+yoy_change,numeric,Year-over-year absolute change
+yoy_pct_change,numeric,Year-over-year percentage change
+growth_rate,numeric,Growth rate (context-dependent calculation)
+trend_indicator,character,Trend classification (increasing/decreasing/stable/unknown)
+value_3yr_avg,numeric,3-year rolling average value
+data_quality_score,numeric,Data quality score (0-1)
+last_updated,Date,Date when data was last processed

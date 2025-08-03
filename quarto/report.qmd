@@ -1,0 +1,878 @@
+---
+title: "Global Consumer Pulse: Economic Trends Analysis"
+subtitle: "Q3 2024 Economic Dashboard Report"
+author: "Economic Analysis Team"
+date: "`r Sys.Date()`"
+params:
+  start_year: 2010
+  end_year: 2023
+  focus_countries: ["United States", "China", "Germany", "Japan", "United Kingdom"]
+  primary_indicator: "gdp"
+  report_type: "full"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-summary: "Show code"
+    fig-width: 10
+    fig-height: 6
+    embed-resources: true
+    smooth-scroll: true
+    css: styles.css
+    page-layout: full
+    title-block-banner: true
+    title-block-banner-color: "#2563eb"
+    link-external-newwindow: true
+    citations-hover: true
+    footnotes-hover: true
+  pdf:
+    documentclass: article
+    geometry: 
+      - margin=1in
+      - paperwidth=8.5in
+      - paperheight=11in
+    fig-width: 7
+    fig-height: 4.5
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{fancyhdr}
+        \usepackage{graphicx}
+        \usepackage{xcolor}
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{array}
+        \usepackage{multirow}
+        \usepackage{wrapfig}
+        \usepackage{float}
+        \usepackage{colortbl}
+        \usepackage{pdflscape}
+        \usepackage{tabu}
+        \usepackage{threeparttable}
+        \usepackage{threeparttablex}
+        \usepackage{ulem}
+        \usepackage{makecell}
+        \definecolor{primaryblue}{HTML}{2563eb}
+        \definecolor{lightgray}{HTML}{f8fafc}
+        \pagestyle{fancy}
+        \fancyhf{}
+        \fancyhead[L]{\textcolor{primaryblue}{\textbf{Global Consumer Pulse}}}
+        \fancyhead[R]{\textcolor{primaryblue}{\thepage}}
+        \fancyfoot[C]{\textcolor{gray}{\small Economic Analysis Team - \today}}
+        \renewcommand{\headrulewidth}{0.5pt}
+        \renewcommand{\footrulewidth}{0.5pt}
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    colorlinks: true
+    linkcolor: "primaryblue"
+    urlcolor: "primaryblue"
+    citecolor: "primaryblue"
+  docx:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    highlight-style: github
+    reference-doc: report-template.docx
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: false
+  freeze: auto
+---
+
+```{r setup}
+#| include: false
+
+# Load required libraries
+library(dplyr)
+library(readr)
+library(plotly)
+library(knitr)
+library(DT)
+library(htmltools)
+library(ggplot2)
+
+# Source visualization functions
+source("../R/visualization_functions.R")
+
+# Load cleaned data
+economic_data <- read_csv("../data/cleaned/economic_data.csv", show_col_types = FALSE)
+
+# Get output format for conditional rendering
+output_format <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+is_html <- !is.null(output_format) && output_format == "html"
+is_pdf <- !is.null(output_format) && output_format %in% c("latex", "pdf")
+is_docx <- !is.null(output_format) && output_format == "docx"
+
+# Set global options
+options(scipen = 999)  # Disable scientific notation
+
+# Configure chunk options based on output format
+if (is_pdf) {
+  knitr::opts_chunk$set(
+    fig.align = "center",
+    out.width = "85%",
+    dpi = 300,
+    dev = "png",
+    fig.pos = "H"
+  )
+} else {
+  knitr::opts_chunk$set(
+    fig.align = "center",
+    out.width = "100%",
+    dpi = 300
+  )
+}
+
+# Apply parameter filters to data
+filtered_data <- economic_data %>%
+  filter(
+    year >= params$start_year,
+    year <= params$end_year
+  )
+
+# Helper function to create highlight cards (HTML) or formatted text (PDF/DOCX)
+create_highlight_card <- function(title, value, subtitle = "", trend = NULL, color = "#2563eb") {
+  if (is_html) {
+    # HTML version with styled cards
+    trend_html <- ""
+    if (!is.null(trend)) {
+      trend_color <- if(trend$direction == "increasing") "#10b981" else if(trend$direction == "decreasing") "#ef4444" else "#64748b"
+      trend_html <- paste0('<div style="color: ', trend_color, '; font-size: 14px; margin-top: 4px;">', 
+                          trend$symbol, ' ', trend$direction, '</div>')
+    }
+    
+    card_html <- paste0(
+      '<div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 10px 0;">',
+      '<div style="color: ', color, '; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">', title, '</div>',
+      '<div style="font-size: 28px; font-weight: 700; color: #1e293b; margin: 8px 0;">', value, '</div>',
+      '<div style="color: #64748b; font-size: 14px;">', subtitle, '</div>',
+      trend_html,
+      '</div>'
+    )
+    
+    return(HTML(card_html))
+  } else {
+    # PDF/DOCX version with formatted text
+    trend_text <- ""
+    if (!is.null(trend)) {
+      trend_text <- paste0(" (", trend$symbol, " ", trend$direction, ")")
+    }
+    
+    formatted_text <- paste0(
+      "**", title, "**\n\n",
+      "**", value, "**", trend_text, "\n\n",
+      subtitle, "\n\n"
+    )
+    
+    return(formatted_text)
+  }
+}
+
+# Helper function to render charts based on format
+render_chart <- function(chart_obj, static_fallback = NULL) {
+  if (is_html) {
+    return(chart_obj)
+  } else {
+    # For PDF/DOCX, return static ggplot version if available
+    if (!is.null(static_fallback)) {
+      return(static_fallback)
+    } else {
+      # Convert plotly to static if possible
+      if ("plotly" %in% class(chart_obj)) {
+        # Extract ggplot from plotly object if available
+        if (!is.null(chart_obj$x$data)) {
+          return(chart_obj)
+        }
+      }
+      return(chart_obj)
+    }
+  }
+}
+
+# Calculate key metrics for executive summary using filtered data
+latest_year <- max(filtered_data$year, na.rm = TRUE)
+previous_year <- latest_year - 1
+
+# Get global averages for latest year
+global_metrics <- filtered_data %>%
+  filter(year == latest_year, !is.na(value)) %>%
+  group_by(indicator_short) %>%
+  summarise(
+    avg_value = mean(value, na.rm = TRUE),
+    median_value = median(value, na.rm = TRUE),
+    countries_count = n(),
+    .groups = "drop"
+  )
+
+# Get top performers based on parameters
+top_gdp_countries <- filtered_data %>%
+  filter(indicator_short == params$primary_indicator, year == latest_year, !is.na(value)) %>%
+  arrange(desc(value)) %>%
+  head(5)
+
+top_cpi_countries <- filtered_data %>%
+  filter(indicator_short == "cpi", year == latest_year, !is.na(value)) %>%
+  arrange(desc(value)) %>%
+  head(5)
+
+# Filter focus countries based on parameters
+focus_countries_available <- intersect(params$focus_countries, unique(filtered_data$country_name))
+```
+
+# Executive Summary
+
+The Global Consumer Pulse Dashboard provides comprehensive analysis of key economic indicators across countries worldwide. This report presents findings from our analysis of GDP, Consumer Price Index (CPI), and inflation data for the period `r params$start_year`-`r params$end_year`, offering insights into global economic trends and country-specific performance patterns.
+
+::: {.callout-note}
+## Report Parameters
+- **Analysis Period**: `r params$start_year` - `r params$end_year`
+- **Focus Countries**: `r paste(params$focus_countries, collapse = ", ")`
+- **Primary Indicator**: `r toupper(params$primary_indicator)`
+- **Report Type**: `r params$report_type`
+:::
+
+## Key Economic Insights
+
+```{r executive-cards}
+#| results: asis
+
+# Create highlight cards for key metrics
+if (nrow(global_metrics) > 0) {
+  if (is_html) {
+    cat('<div class="executive-summary">\n')
+  }
+  
+  # GDP insights
+  gdp_data <- global_metrics %>% filter(indicator_short == "gdp")
+  if (nrow(gdp_data) > 0) {
+    gdp_card <- create_highlight_card(
+      "Global GDP Coverage", 
+      paste(gdp_data$countries_count, "Countries"),
+      paste("Average GDP:", format(gdp_data$avg_value/1e12, digits = 2), "Trillion USD"),
+      color = "#3b82f6"
+    )
+    if (is_html) {
+      cat(as.character(gdp_card))
+    } else {
+      cat(gdp_card)
+    }
+  }
+  
+  # CPI insights  
+  cpi_data <- global_metrics %>% filter(indicator_short == "cpi")
+  if (nrow(cpi_data) > 0) {
+    cpi_card <- create_highlight_card(
+      "Consumer Price Index", 
+      paste(cpi_data$countries_count, "Countries"),
+      paste("Global Average CPI:", round(cpi_data$avg_value, 1)),
+      color = "#10b981"
+    )
+    if (is_html) {
+      cat(as.character(cpi_card))
+    } else {
+      cat(cpi_card)
+    }
+  }
+  
+  # Inflation insights
+  inflation_data <- global_metrics %>% filter(indicator_short == "inflation")
+  if (nrow(inflation_data) > 0) {
+    inflation_card <- create_highlight_card(
+      "Inflation Analysis", 
+      paste(inflation_data$countries_count, "Countries"),
+      paste("Average Inflation:", round(inflation_data$avg_value, 2), "%"),
+      color = "#f59e0b"
+    )
+    if (is_html) {
+      cat(as.character(inflation_card))
+    } else {
+      cat(inflation_card)
+    }
+  }
+  
+  if (is_html) {
+    cat('</div>\n')
+  }
+}
+```
+
+## Report Highlights
+
+- **Comprehensive Coverage**: Analysis spans `r length(unique(economic_data$country_name))` countries with data from `r min(economic_data$year, na.rm = TRUE)` to `r max(economic_data$year, na.rm = TRUE)`
+- **Multi-Indicator Analysis**: GDP, Consumer Price Index, and inflation trends
+- **Interactive Visualizations**: Dynamic charts enabling detailed country comparisons
+- **Trend Analysis**: Year-over-year changes and growth pattern identification
+
+---
+
+# Global Economic Overview
+
+## World Economic Landscape
+
+The global economic landscape shows diverse patterns across different regions and development levels. Our analysis reveals significant variations in economic indicators, with developed economies generally showing more stable patterns compared to emerging markets.
+
+```{r world-map-gdp}
+#| fig-cap: "Global GDP Distribution - Interactive world map showing GDP levels by country"
+
+# Create world map for GDP
+gdp_data <- filtered_data %>%
+  filter(indicator_short == "gdp", !is.na(value), year == latest_year)
+
+if (nrow(gdp_data) > 0) {
+  if (is_html) {
+    # Interactive plotly map for HTML
+    world_map_gdp <- create_world_map(
+      data = gdp_data,
+      indicator_name = "GDP (Current US$)",
+      color_scale = "sequential"
+    )
+    world_map_gdp
+  } else {
+    # Static alternative for PDF/DOCX
+    gdp_summary <- gdp_data %>%
+      arrange(desc(value)) %>%
+      head(10) %>%
+      mutate(
+        gdp_trillions = round(value / 1e12, 2),
+        rank = row_number()
+      )
+    
+    # Create a simple bar chart
+    static_gdp_chart <- ggplot(gdp_summary, aes(x = reorder(country_name, value), y = gdp_trillions)) +
+      geom_col(fill = "#2563eb", alpha = 0.8) +
+      coord_flip() +
+      labs(
+        title = "Top 10 Countries by GDP",
+        subtitle = paste("Year:", latest_year),
+        x = "Country",
+        y = "GDP (Trillions USD)"
+      ) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12, color = "gray60"),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 11)
+      )
+    
+    print(static_gdp_chart)
+  }
+} else {
+  cat("GDP data not available for world map visualization.")
+}
+```
+
+```{r world-map-cpi}
+#| fig-cap: "Global Consumer Price Index Distribution"
+
+# Create world map for CPI
+cpi_data <- filtered_data %>%
+  filter(indicator_short == "cpi", !is.na(value), year == latest_year)
+
+if (nrow(cpi_data) > 0) {
+  if (is_html) {
+    # Interactive plotly map for HTML
+    world_map_cpi <- create_world_map(
+      data = cpi_data,
+      indicator_name = "Consumer Price Index (2010 = 100)",
+      color_scale = "sequential"
+    )
+    world_map_cpi
+  } else {
+    # Static alternative for PDF/DOCX
+    cpi_summary <- cpi_data %>%
+      arrange(desc(value)) %>%
+      head(10) %>%
+      mutate(
+        cpi_rounded = round(value, 1),
+        rank = row_number()
+      )
+    
+    # Create a simple bar chart
+    static_cpi_chart <- ggplot(cpi_summary, aes(x = reorder(country_name, value), y = cpi_rounded)) +
+      geom_col(fill = "#10b981", alpha = 0.8) +
+      coord_flip() +
+      labs(
+        title = "Top 10 Countries by Consumer Price Index",
+        subtitle = paste("Year:", latest_year, "| Base: 2010 = 100"),
+        x = "Country",
+        y = "Consumer Price Index"
+      ) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(size = 14, face = "bold"),
+        plot.subtitle = element_text(size = 12, color = "gray60"),
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 11)
+      )
+    
+    print(static_cpi_chart)
+  }
+} else {
+  cat("CPI data not available for world map visualization.")
+}
+```
+
+## Economic Trends Over Time
+
+The following analysis examines how key economic indicators have evolved over the past decade, highlighting major trends and inflection points in the global economy.
+
+```{r global-trends}
+#| fig-cap: "Global Economic Trends - Average values across all countries over time"
+
+# Calculate global averages by year using filtered data
+global_trends <- filtered_data %>%
+  filter(!is.na(value)) %>%
+  group_by(year, indicator_short, indicator_name) %>%
+  summarise(
+    avg_value = mean(value, na.rm = TRUE),
+    median_value = median(value, na.rm = TRUE),
+    countries_count = n(),
+    .groups = "drop"
+  )
+
+# Create trend charts for each indicator
+indicators <- unique(global_trends$indicator_short)
+
+for (indicator in indicators) {
+  if (indicator %in% c("gdp", "cpi", "inflation")) {
+    trend_data <- global_trends %>% 
+      filter(indicator_short == indicator) %>%
+      mutate(country_name = "Global Average")  # Add country_name for compatibility
+    
+    if (nrow(trend_data) > 0) {
+      indicator_name <- unique(trend_data$indicator_name)[1]
+      
+      if (is_html) {
+        # Interactive plotly chart for HTML
+        trend_chart <- create_time_series_chart(
+          data = trend_data %>% rename(value = avg_value),
+          countries = "Global Average",
+          indicator_name = indicator_name,
+          show_trend = TRUE
+        )
+        print(trend_chart)
+      } else {
+        # Static ggplot chart for PDF/DOCX
+        static_trend <- ggplot(trend_data, aes(x = year, y = avg_value)) +
+          geom_line(color = "#2563eb", size = 1.2) +
+          geom_point(color = "#2563eb", size = 2) +
+          labs(
+            title = paste("Global", indicator_name, "Trend"),
+            subtitle = paste("Period:", params$start_year, "-", params$end_year),
+            x = "Year",
+            y = indicator_name
+          ) +
+          theme_minimal() +
+          theme(
+            plot.title = element_text(size = 14, face = "bold"),
+            plot.subtitle = element_text(size = 12, color = "gray60"),
+            axis.text = element_text(size = 10),
+            axis.title = element_text(size = 11)
+          )
+        
+        # Format y-axis based on indicator type
+        if (indicator == "gdp") {
+          static_trend <- static_trend + 
+            scale_y_continuous(labels = function(x) paste0("$", round(x/1e12, 1), "T"))
+        } else if (indicator == "inflation") {
+          static_trend <- static_trend + 
+            scale_y_continuous(labels = function(x) paste0(round(x, 1), "%"))
+        }
+        
+        print(static_trend)
+      }
+      cat("\n\n")
+    }
+  }
+}
+```
+
+---
+
+# Country Spotlights
+
+This section highlights the top-performing countries across different economic indicators, providing detailed analysis of their economic patterns and performance drivers.
+
+## Top GDP Performers
+
+```{r top-gdp-analysis}
+#| results: asis
+
+if (nrow(top_gdp_countries) > 0) {
+  cat("### Leading Economies by GDP\n\n")
+  
+  # Create a summary table
+  gdp_table <- top_gdp_countries %>%
+    select(country_name, value, year) %>%
+    mutate(
+      gdp_formatted = paste0("$", round(value / 1e12, 2), "T"),
+      rank = row_number()
+    ) %>%
+    select(rank, country_name, gdp_formatted, year)
+  
+  kable(gdp_table, 
+        col.names = c("Rank", "Country", "GDP (USD)", "Year"),
+        caption = "Top 5 Countries by GDP")
+  
+  cat("\n\n")
+}
+```
+
+```{r top-gdp-chart}
+#| fig-cap: "Top GDP Countries Comparison"
+
+if (nrow(top_gdp_countries) > 0) {
+  gdp_comparison <- create_comparison_chart(
+    data = economic_data %>% filter(indicator_short == "gdp"),
+    countries = top_gdp_countries$country_name,
+    indicator_name = "GDP (Current US$)",
+    sort_desc = TRUE
+  )
+  
+  gdp_comparison
+}
+```
+
+## Consumer Price Index Leaders
+
+```{r top-cpi-analysis}
+#| results: asis
+
+if (nrow(top_cpi_countries) > 0) {
+  cat("### Highest Consumer Price Index Countries\n\n")
+  
+  # Create CPI summary table
+  cpi_table <- top_cpi_countries %>%
+    select(country_name, value, year) %>%
+    mutate(
+      cpi_formatted = round(value, 2),
+      rank = row_number()
+    ) %>%
+    select(rank, country_name, cpi_formatted, year)
+  
+  kable(cpi_table,
+        col.names = c("Rank", "Country", "CPI (2010=100)", "Year"),
+        caption = "Top 5 Countries by Consumer Price Index")
+  
+  cat("\n\n")
+}
+```
+
+```{r top-cpi-chart}
+#| fig-cap: "Top CPI Countries Comparison"
+
+if (nrow(top_cpi_countries) > 0) {
+  cpi_comparison <- create_comparison_chart(
+    data = economic_data %>% filter(indicator_short == "cpi"),
+    countries = top_cpi_countries$country_name,
+    indicator_name = "Consumer Price Index (2010 = 100)",
+    sort_desc = TRUE
+  )
+  
+  cpi_comparison
+}
+```
+
+## Detailed Country Analysis
+
+```{r country-spotlight}
+#| results: asis
+
+# Select top 3 countries for detailed analysis
+spotlight_countries <- c("United States", "China", "Japan", "Germany", "India")
+available_countries <- intersect(spotlight_countries, unique(economic_data$country_name))
+
+for (country in head(available_countries, 3)) {
+  cat(paste0("### ", country, " Economic Profile\n\n"))
+  
+  # Get country data
+  country_data <- economic_data %>%
+    filter(country_name == country, !is.na(value)) %>%
+    arrange(indicator_short, year)
+  
+  if (nrow(country_data) > 0) {
+    # Latest values for each indicator
+    latest_values <- country_data %>%
+      group_by(indicator_short) %>%
+      filter(year == max(year)) %>%
+      ungroup()
+    
+    # Create summary cards for this country
+    for (i in 1:nrow(latest_values)) {
+      indicator <- latest_values$indicator_short[i]
+      value <- latest_values$value[i]
+      year <- latest_values$year[i]
+      
+      # Format value based on indicator type
+      if (indicator == "gdp") {
+        formatted_value <- paste0("$", round(value / 1e12, 2), "T")
+        title <- "GDP (Current US$)"
+      } else if (indicator == "cpi") {
+        formatted_value <- round(value, 2)
+        title <- "Consumer Price Index"
+      } else if (indicator == "inflation") {
+        formatted_value <- paste0(round(value, 2), "%")
+        title <- "Inflation Rate"
+      } else {
+        formatted_value <- format(value, big.mark = ",", digits = 2)
+        title <- indicator
+      }
+      
+      card <- create_highlight_card(
+        title = title,
+        value = formatted_value,
+        subtitle = paste("Latest available data:", year),
+        color = "#6366f1"
+      )
+      
+      cat(as.character(card))
+    }
+    
+    cat("\n\n")
+  }
+}
+```
+
+---
+
+# Comparative Analysis
+
+## Multi-Country Economic Comparison
+
+This section provides side-by-side comparisons of economic performance across selected countries, enabling identification of relative strengths and economic patterns.
+
+```{r comparison-setup}
+# Use focus countries from parameters for comparison
+available_comparison <- intersect(params$focus_countries, unique(filtered_data$country_name))
+```
+
+```{r gdp-comparison-multi}
+#| fig-cap: "GDP Comparison Across Major Economies"
+
+if (length(available_comparison) > 0) {
+  comparison_data <- filtered_data %>% 
+    filter(indicator_short == "gdp", country_name %in% head(available_comparison, 5))
+  
+  if (is_html) {
+    # Interactive plotly chart for HTML
+    gdp_multi_comparison <- create_time_series_chart(
+      data = comparison_data,
+      countries = head(available_comparison, 5),
+      indicator_name = "GDP (Current US$)",
+      year_range = c(params$start_year, params$end_year),
+      show_trend = FALSE
+    )
+    gdp_multi_comparison
+  } else {
+    # Static ggplot chart for PDF/DOCX
+    if (nrow(comparison_data) > 0) {
+      static_comparison <- ggplot(comparison_data, aes(x = year, y = value, color = country_name)) +
+        geom_line(size = 1.2) +
+        geom_point(size = 2) +
+        labs(
+          title = "GDP Comparison Across Major Economies",
+          subtitle = paste("Period:", params$start_year, "-", params$end_year),
+          x = "Year",
+          y = "GDP (Current US$)",
+          color = "Country"
+        ) +
+        scale_y_continuous(labels = function(x) paste0("$", round(x/1e12, 1), "T")) +
+        theme_minimal() +
+        theme(
+          plot.title = element_text(size = 14, face = "bold"),
+          plot.subtitle = element_text(size = 12, color = "gray60"),
+          axis.text = element_text(size = 10),
+          axis.title = element_text(size = 11),
+          legend.position = "bottom"
+        )
+      print(static_comparison)
+    }
+  }
+}
+```
+
+```{r cpi-comparison-multi}
+#| fig-cap: "Consumer Price Index Trends Comparison"
+
+if (length(available_comparison) > 0) {
+  cpi_comparison_data <- filtered_data %>% 
+    filter(indicator_short == "cpi", country_name %in% head(available_comparison, 5))
+  
+  if (is_html) {
+    # Interactive plotly chart for HTML
+    cpi_multi_comparison <- create_time_series_chart(
+      data = cpi_comparison_data,
+      countries = head(available_comparison, 5),
+      indicator_name = "Consumer Price Index (2010 = 100)",
+      year_range = c(params$start_year, params$end_year),
+      show_trend = FALSE
+    )
+    cpi_multi_comparison
+  } else {
+    # Static ggplot chart for PDF/DOCX
+    if (nrow(cpi_comparison_data) > 0) {
+      static_cpi_comparison <- ggplot(cpi_comparison_data, aes(x = year, y = value, color = country_name)) +
+        geom_line(size = 1.2) +
+        geom_point(size = 2) +
+        labs(
+          title = "Consumer Price Index Trends Comparison",
+          subtitle = paste("Period:", params$start_year, "-", params$end_year, "| Base: 2010 = 100"),
+          x = "Year",
+          y = "Consumer Price Index",
+          color = "Country"
+        ) +
+        theme_minimal() +
+        theme(
+          plot.title = element_text(size = 14, face = "bold"),
+          plot.subtitle = element_text(size = 12, color = "gray60"),
+          axis.text = element_text(size = 10),
+          axis.title = element_text(size = 11),
+          legend.position = "bottom"
+        )
+      print(static_cpi_comparison)
+    }
+  }
+}
+```
+
+## Regional Economic Patterns
+
+```{r regional-analysis}
+#| results: asis
+
+# Analyze patterns by creating regional groupings (simplified)
+# Note: In a full implementation, you would have proper regional classifications
+
+cat("### Economic Performance Summary\n\n")
+
+# Create summary statistics table
+summary_stats <- economic_data %>%
+  filter(year == latest_year, !is.na(value)) %>%
+  group_by(indicator_short, indicator_name) %>%
+  summarise(
+    countries = n(),
+    mean_value = mean(value, na.rm = TRUE),
+    median_value = median(value, na.rm = TRUE),
+    min_value = min(value, na.rm = TRUE),
+    max_value = max(value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    mean_formatted = case_when(
+      indicator_short == "gdp" ~ paste0("$", round(mean_value / 1e12, 2), "T"),
+      indicator_short == "inflation" ~ paste0(round(mean_value, 2), "%"),
+      TRUE ~ round(mean_value, 2)
+    ),
+    range_formatted = case_when(
+      indicator_short == "gdp" ~ paste0("$", round(min_value / 1e12, 2), "T - $", round(max_value / 1e12, 2), "T"),
+      indicator_short == "inflation" ~ paste0(round(min_value, 2), "% - ", round(max_value, 2), "%"),
+      TRUE ~ paste0(round(min_value, 2), " - ", round(max_value, 2))
+    )
+  )
+
+if (nrow(summary_stats) > 0) {
+  summary_table <- summary_stats %>%
+    select(indicator_name, countries, mean_formatted, range_formatted)
+  
+  kable(summary_table,
+        col.names = c("Economic Indicator", "Countries", "Global Average", "Range"),
+        caption = paste("Global Economic Indicators Summary -", latest_year))
+}
+```
+
+---
+
+# Data & Methodology
+
+## Data Sources
+
+This analysis is based on World Bank economic indicators, providing comprehensive coverage of global economic data:
+
+- **GDP Data**: Gross Domestic Product in current US dollars
+- **Consumer Price Index**: CPI with base year 2010 = 100
+- **Inflation Data**: Consumer price inflation rates
+
+## Methodology
+
+### Data Processing
+
+1. **Data Cleaning**: Standardization of country names and handling of missing values
+2. **Format Conversion**: Transformation from wide to long format for analysis
+3. **Quality Validation**: Implementation of data quality checks and scoring
+4. **Trend Calculation**: Year-over-year change and growth rate computations
+
+### Analytical Approach
+
+- **Comparative Analysis**: Cross-country comparisons using standardized metrics
+- **Trend Analysis**: Time series analysis to identify patterns and inflections
+- **Statistical Summaries**: Descriptive statistics and distribution analysis
+- **Visualization**: Interactive charts for enhanced data exploration
+
+### Technical Implementation
+
+```{r methodology-info}
+#| results: asis
+
+cat("**Technical Stack:**\n")
+cat("- **R Programming**: Data processing and analysis\n")
+cat("- **Plotly**: Interactive visualizations\n") 
+cat("- **Quarto**: Reproducible reporting\n")
+cat("- **dplyr/tidyr**: Data manipulation\n\n")
+
+cat("**Data Coverage:**\n")
+cat(paste("- **Countries Analyzed**:", length(unique(economic_data$country_name)), "\n"))
+cat(paste("- **Time Period**:", min(economic_data$year, na.rm = TRUE), "-", max(economic_data$year, na.rm = TRUE), "\n"))
+cat(paste("- **Total Observations**:", nrow(economic_data), "\n"))
+cat(paste("- **Last Updated**:", Sys.Date(), "\n"))
+```
+
+## Data Quality Assessment
+
+```{r data-quality}
+#| results: asis
+
+# Calculate data completeness by indicator
+completeness <- economic_data %>%
+  group_by(indicator_short, indicator_name) %>%
+  summarise(
+    total_possible = n(),
+    available_data = sum(!is.na(value)),
+    completeness_pct = round((available_data / total_possible) * 100, 1),
+    .groups = "drop"
+  )
+
+if (nrow(completeness) > 0) {
+  cat("### Data Completeness by Indicator\n\n")
+  
+  completeness_table <- completeness %>%
+    select(indicator_name, available_data, total_possible, completeness_pct)
+  
+  kable(completeness_table,
+        col.names = c("Indicator", "Available", "Total Possible", "Completeness %"),
+        caption = "Data Quality and Completeness Assessment")
+}
+```
+
+---
+
+## Conclusion
+
+The Global Consumer Pulse Dashboard demonstrates the power of integrated economic analysis, combining multiple indicators to provide comprehensive insights into global economic trends. The interactive visualizations and detailed country analyses enable stakeholders to:
+
+- **Identify Economic Leaders**: Recognize top-performing countries across different metrics
+- **Track Global Trends**: Monitor economic patterns and inflection points over time  
+- **Compare Performance**: Conduct detailed cross-country economic comparisons
+- **Assess Regional Patterns**: Understand economic dynamics across different regions
+
+This analysis framework provides a solid foundation for ongoing economic monitoring and strategic decision-making, with the flexibility to incorporate additional indicators and extend the analytical scope as needed.
+
+---
+
+*Report generated on `r Sys.Date()` using R `r R.version.string` and Quarto.*

@@ -1,0 +1,385 @@
+/* Global Consumer Pulse Report - Custom Styles */
+/* Professional styling matching economic-canvas design system */
+
+/* Root variables for consistent theming */
+:root {
+  --primary-blue: #2563eb;
+  --primary-dark: #1e40af;
+  --primary-light: #3b82f6;
+  --success-green: #10b981;
+  --warning-orange: #f59e0b;
+  --error-red: #ef4444;
+  --background-gray: #f8fafc;
+  --card-white: #ffffff;
+  --border-gray: #e2e8f0;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+}
+
+/* Body and main layout */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: var(--text-dark);
+  background-color: var(--background-gray);
+}
+
+/* Header styling */
+.quarto-title-banner {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 3rem 0;
+}
+
+.quarto-title .title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.quarto-title .subtitle {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+/* Main content area */
+#quarto-content {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
+  padding: 2rem;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 2.25rem;
+  border-bottom: 3px solid var(--primary-blue);
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.875rem;
+  color: var(--primary-blue);
+}
+
+h3 {
+  font-size: 1.5rem;
+  color: var(--primary-dark);
+}
+
+/* Table of contents */
+#quarto-sidebar {
+  background-color: var(--card-white);
+  border-right: 1px solid var(--border-gray);
+}
+
+#quarto-sidebar .sidebar-navigation {
+  padding: 1rem;
+}
+
+#quarto-sidebar .sidebar-navigation a {
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.5rem 0;
+  display: block;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+#quarto-sidebar .sidebar-navigation a:hover {
+  color: var(--primary-blue);
+  background-color: var(--background-gray);
+  padding-left: 0.75rem;
+}
+
+#quarto-sidebar .sidebar-navigation a.active {
+  color: var(--primary-blue);
+  font-weight: 600;
+  background-color: var(--background-gray);
+  padding-left: 0.75rem;
+}
+
+/* Highlight cards styling */
+.highlight-card {
+  background: var(--card-white);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+  border-left: 4px solid var(--primary-blue);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.highlight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.highlight-card .card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-blue);
+  margin-bottom: 0.5rem;
+}
+
+.highlight-card .card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0.5rem 0;
+}
+
+.highlight-card .card-subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Executive summary grid */
+.executive-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+/* Figure and chart styling */
+.quarto-figure {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.quarto-figure-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.figure-caption {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Plotly chart containers */
+.plotly {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  background-color: var(--card-white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+table thead {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-gray);
+}
+
+table tbody tr:hover {
+  background-color: var(--background-gray);
+}
+
+table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Code blocks */
+.sourceCode {
+  background-color: var(--background-gray);
+  border: 1px solid var(--border-gray);
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.code-fold-btn {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.code-fold-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Alert boxes */
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  border-left: 4px solid;
+}
+
+.alert-info {
+  background-color: #eff6ff;
+  border-left-color: var(--primary-blue);
+  color: var(--primary-dark);
+}
+
+.alert-success {
+  background-color: #f0fdf4;
+  border-left-color: var(--success-green);
+  color: #166534;
+}
+
+.alert-warning {
+  background-color: #fffbeb;
+  border-left-color: var(--warning-orange);
+  color: #92400e;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .quarto-title .title {
+    font-size: 2rem;
+  }
+  
+  .quarto-title .subtitle {
+    font-size: 1.125rem;
+  }
+  
+  #quarto-content {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .executive-summary {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  table {
+    font-size: 0.875rem;
+  }
+  
+  table th,
+  table td {
+    padding: 0.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background-color: white;
+  }
+  
+  #quarto-content {
+    box-shadow: none;
+    margin: 0;
+  }
+  
+  .highlight-card {
+    box-shadow: none;
+    border: 1px solid var(--border-gray);
+  }
+  
+  .plotly {
+    box-shadow: none;
+    border: 1px solid var(--border-gray);
+  }
+}
+
+/* Custom utility classes */
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-primary {
+  color: var(--primary-blue);
+}
+
+.bg-light {
+  background-color: var(--background-gray);
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.border-left-primary {
+  border-left: 4px solid var(--primary-blue);
+  padding-left: 1rem;
+}
+
+.mt-4 {
+  margin-top: 2rem;
+}
+
+.mb-4 {
+  margin-bottom: 2rem;
+}
+
+.p-3 {
+  padding: 1.5rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+a:focus,
+button:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* Loading animation for charts */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 2s infinite;
+}
